@@ -1,10 +1,33 @@
+<#
+.Synopsis
+   Library of functions that contains Teams Cloud utilities
+.DESCRIPTION
+   Contains Teams Cloud utilities to easy export/set/delete data. Some functions require install MicrosoftTeams Module
+.FUNCTIONALITY
+   Contains following Functions:
+   Get-CsQueuesFTUsers              ## Get all users joined with its Call Queue and return result as CSV
+   Remove-CsUsersOfflineFromQueues  ## Remove all users not licensed from all queues under Teams Cloud
+.NOTES
+   Developed by
+   File Name  : TeamsOnline.ps1 
+   Author     : Óscar Núñez Hernández - net.oscar.nunez@outlook.com
+   Requires   : PowerShell V5.1.22000.282
+.COMPONENT
+   Needs MicrosoftTeams
+.ROLE
+   The role this cmdlet belongs to
+.INPUTS
+   No imputs required
+.OUTPUTS
+   Depends on each function
+.PARAMETER <custom>
+   Depends on each function
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
 
-
-
-
-#### @@@ TEAMS AUTOMATION @@@ ####
-
-# Delete Users without license from Marlex Call Queue
 Function Remove-CsUsersOfflineFromQueues {
     # Import & connect to Microsoft Teams
     Import-Module MicrosoftTeams
@@ -54,25 +77,30 @@ Function Remove-CsUsersOfflineFromQueues {
 
 }
 
-# Get all users from 
 Function Get-CsQueuesFTUsers {
     # Import & connect to Microsoft Teams
     Import-Module MicrosoftTeams
     Connect-MicrosoftTeams
+    $prcCountTasks  = 3
+    $prcCurrentTask = 0
 
-    # Collect Microsoft On-line Data
+    # Collect Microsoft On-line Data    
+    Write-Progress -Id 0 -Activity "Collect Microsoft Users" -Status "$prcCurrentTask/$prcCountTasks" -PercentComplete (($prcCurrentTask/$prcCountTasks)*100); $prcCurrentTask += 1
     $Users  = Get-CSOnlineUser
+    Write-Progress -Id 0 -Activity "Collect Microsoft Queues" -Status "$prcCurrentTask/$prcCountTasks" -PercentComplete (($prcCurrentTask/$prcCountTasks)*100); $prcCurrentTask += 1
     $Queues = Get-CSCallQueue
     #Get-CsOnlineApplicationInstanceAssociation
 
-
-    # Get Queues & UserName
+    # Collect Data
+    $result += $header
     $header = "queueName;queueDDI;userName;userDDI;userLicensed"
     $result = @()
 
-    # Collect Data
-    $result += $header
+    Write-Progress -Id 0 -Activity "Processing CallQueues Data" -Status "$prcCurrentTask/$prcCountTasks" -PercentComplete (($prcCurrentTask/$prcCountTasks)*100); $prcCurrentTask += 1
+    $currentQueue = 0
     ForEach ($queue in $queues) {
+        Write-Progress -Id 1 -Activity "Getting Queue Info" -Status "$currentQueue/$($Queues.Count)" -PercentComplete (($currentQueue/$($Queues.Count))/100); $currentQueue += 1
+
         # Join Information
         $queueInstance = $queue.ApplicationInstances
         $queueInstanceInformation = Get-CsOnlineApplicationInstance -Identity $queueInstance
@@ -100,6 +128,6 @@ Function Get-CsQueuesFTUsers {
             Write-Host "$queueName;$queueDDI;NULL;NULL;NULL"
         }
     }
-
+    
     return $result
 }
