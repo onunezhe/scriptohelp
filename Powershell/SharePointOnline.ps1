@@ -28,6 +28,9 @@
    Another example of how to use this cmdlet
 #>
 
+# Pre-config
+# Install-Module SharePointPnPPowerShellOnline
+
 ##Start Script
 
 #Standar libraries
@@ -38,6 +41,58 @@
   #Install-Module SharePointPnPPowerShellOnline 
 
 #Local source
+
+#Functions
+
+#Function to Download All Files from a SharePoint Online Folder - Recursively 
+Function Download-SPOFolder([Microsoft.SharePoint.Client.Folder]$Folder, $DestinationFolder)
+{ 
+    #Get the Folder's Site Relative URL
+    $FolderURL = $Folder.ServerRelativeUrl.Substring($Folder.Context.Web.ServerRelativeUrl.Length)
+    $LocalFolder = $DestinationFolder + ($FolderURL -replace "/","\")
+    #Create Local Folder, if it doesn't exist
+    If (!(Test-Path -Path $LocalFolder)) {
+            New-Item -ItemType Directory -Path $LocalFolder | Out-Null
+            Write-host -f Yellow "Created a New Folder '$LocalFolder'"
+    }
+            
+    #Get all Files from the folder
+    $FilesColl = Get-PnPFolderItem -FolderSiteRelativeUrl $FolderURL -ItemType File
+    #Iterate through each file and download
+    Foreach($File in $FilesColl)
+    {
+        Get-PnPFile -ServerRelativeUrl $File.ServerRelativeUrl -Path $LocalFolder -FileName $File.Name -AsFile -force
+        Write-host -f Green "`tDownloaded File from '$($File.ServerRelativeUrl)'"
+    }
+    #Get Subfolders of the Folder and call the function recursively
+    $SubFolders = Get-PnPFolderItem -FolderSiteRelativeUrl $FolderURL -ItemType Folder
+    Foreach ($Folder in $SubFolders | Where {$_.Name -ne "Forms"})
+    {
+        Download-SPOFolder $Folder $DestinationFolder
+    }
+} 
+
+#Set Parameters
+$SiteURL = "https://ekmgroup.sharepoint.com/sites/intradrive"
+$FolderSiteRelativeURL = "/sites/intradrive/Documentos Compartidos"
+
+#Set local path to save
+$DownloadPath ="C:\Temp\"
+  
+#Connect to PnP Online
+Connect-PnPOnline -Url $SiteURL
+  
+#Get the folder to download
+$Folder = Get-PnPFolder -Url $FolderSiteRelativeURL
+  
+#Call the function to download the folder
+Download-SPOFolder $Folder $DownloadPath
+
+
+
+
+#Random Code
+
   Import-Module 'C:\Users\onunez\OneDrive - EKM GROUP HUMAN CAPITAL, S.L.U\Documentos\GitHub\scriptohelp\Powershell\MSSQL.ps1'
 
 

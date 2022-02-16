@@ -1,10 +1,13 @@
+# Pre-config
+# Install-Module MSOnline
 
 
 
-# Connect into Microsoft On-Line service
-Connect-MsolService
 
 Function Download-ExchangeGroupMembers {
+    # Connect into Microsoft On-Line service
+    Connect-MsolService
+
     # Get all groups
     $groups = Get-MsolGroup
 
@@ -34,6 +37,44 @@ Function Download-ExchangeGroupMembers {
     return $arrayGroups,$arrayGroupMembers
 }
 
+Function Get-OWASignatures {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory)]
+        [ValidateSet("SignatureText", "SignatureHTML", "ValidateSignature")]
+        [string]
+        $output 
+    )
 
+    # Get secure credentials
+    $Credentials = Get-Credential
+    # Connect to Microsoft Exchange OWA
+    $Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -Credential $Credentials -Authentication Basic -AllowRedirection
+    # Import session to get all commands from OWA
+    Import-PSSession $Session -DisableNameChecking
 
+    # Get all mailbox created
+    $mailboxes = Get-Mailbox -RecipientTypeDetails UserMailbox
 
+    # Get Ready Value 2 return
+    $arrSignature = @()
+
+    # Loop all signatures (depens parameter) /*Under Work*/
+    Switch ($output){
+        'SignatureText' {
+            $mailboxes | Get-MailboxMessageConfiguration | select Identity,Signature* | Format-List
+        }
+        'SignatureHTML' {
+            
+        }
+        'ValidateSignature' {
+            ForEach ($mail in $mailboxes){
+                $mailAdress = $mail.PrimarySmtpAddress
+                $mailSignatureHTML = ($mailboxes[0] | Get-MailboxMessageConfiguration).SignatureHtml
+                
+            }
+        }
+    }
+
+    
+}
