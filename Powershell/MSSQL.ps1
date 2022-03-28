@@ -20,7 +20,7 @@ Function doQuery (){
             $dbName
         )
 
-    $sqlusername    = $dbIdentity[0]
+  $sqlusername    = $dbIdentity[0]
 	$sqlpassword    = $dbIdentity[1]
 	
   # Set Object to Return
