@@ -5,6 +5,7 @@
    Reset-VirtualTerminalServer                      #Only works directly on RDS GATEWAY
    Get-GroupedProcesses                             #Get CPU-RAM-NumberProcess-Process-Server array withing array of Hosts
    Calculate-DiskExpansion -freeGB x -totalGB y     #Calculate necessary disk expansion physical and virtual (calculates on Windows Format)
+   Get-CustomScheduledTasks                         #Get Scheduled Tasks programmed by Custom Domain
 .NOTES
    File Name  : adminHelper.ps1 
    Author     : Óscar Núñez - net.oscar.nunez@outlook.com
@@ -106,4 +107,37 @@ Function Calculate-DiskExpansion {
         $log = "Incorrect or missing values."
     }
     return $log
+}
+
+Function Get-CustomScheduledTasks {
+    Param(
+        [string]$domain,
+        [array]$servers,
+        [string]$path
+    )
+
+    # Variables to use
+    #$servers = @('BI','BROKER','CORREU','NAS','PMP','PRINTER','SQL16','TSV10','TSV11','TSV12','TSV17','TSV18','TSV19','TSV21','TSV4','TSV5','TSV6','TSV7','TSV8','TSV9','VM_DC1','VM_DC2','VM_NET4','VM_VEEAM','WEBTTI12')
+
+    # Define variables to save results
+    $jobs  = @()
+    $sctsk = $null
+
+    ForEach ($server in $wservers){
+        Write-Output "Searching Scheduled tasks into $server"
+        # Try get scheduled tasks. If success it will save jobs into array
+        try {
+            $sctsk = ((Get-ScheduledTask -CimSession "$server") | where {$_.Author -like "$domain\*"} | select @{label="Server";expression={$server}}, taskname, state, author, @{label="Executor";expression={$_.principal.UserID}})
+            $jobs += $sctsk
+        }
+        catch {
+            Write-Output "$server failed while searching scheduled tasks"
+        }
+        $sctsk = $null
+    }
+    
+    # Export results:
+    #$jobs | select Server,taskname,state,author,executor |  Export-Csv -Path C:\Temp\jobs.csv -NoTypeInformation
+    
+    return $jobs
 }
